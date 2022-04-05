@@ -5,6 +5,7 @@ from iqoptionapi.ws.chanels.base import Base
 import logging
 from iqoptionapi.expiration import get_expiration_time
 from datetime import datetime,timedelta
+import iqoptionapi.global_value  as global_value
 
 class Buyv2(Base):
     """Class for IQ option buy websocket chanel."""
@@ -37,7 +38,7 @@ class Buyv2(Base):
             "exp":int(exp),
             "type": option,
             "direction": direction.lower(),
-            "user_balance_id":int(self.api.profile.balance_id),
+            "user_balance_id":int(global_value.balance_id),
             "time": self.api.timesync.server_timestamp
         }
 

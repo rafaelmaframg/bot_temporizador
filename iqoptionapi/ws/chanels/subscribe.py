@@ -107,3 +107,32 @@ class Subscribe_commission_changed(Base):
                 "version":"1.0"
                 }
         self.send_websocket_request(self.name, data)
+
+
+class Subscribe_live_deal(Base):
+    name = "subscribeMessage"
+
+    def __call__(self,name,active_id,_type):
+ #"live-deal-binary-option-placed"
+ #"live-deal-digital-option"
+        if name=="live-deal-binary-option-placed":
+            _type_name="option_type"#turbo/binary
+            _active_id="active_id"
+        elif name=="live-deal-digital-option":
+            _type_name="expiration_type"#
+            _active_id="instrument_active_id"
+        elif name=="live-deal":
+            _type_name="instrument_type"#
+            _active_id="instrument_active_id"
+
+
+        data = {"name":name,
+                "params":{
+                       "routingFilters":{
+                                        _active_id:int(active_id), 
+                                       _type_name:str(_type)
+                                        }
+                        },
+                "version":"2.0"
+                }
+        self.send_websocket_request(self.name, data)
