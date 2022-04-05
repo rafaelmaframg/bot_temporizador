@@ -2,17 +2,17 @@ import cryptocode
 
 dados = {}
 legenda = """
-
 #LEGENDA 
 #===================
 #OPERACAO =  1 - (Digital)  2 - (Binaria)
-#TIPO_MHI =  DEMO - REAL
+#TIPO_CONTA =  DEMO - REAL
 #PAR = PARIDADE para operar ex: EURUSD-OTC
-#dir = CVC ou VCV
+#TENTATIVAS = Numero Tentativas
 #multiplicador = #valor da multiplicacao
 #valor_entrada = #valor entrada
 #stop_loss = #valor stop loss
 #stop_gain = #valor stop gain
+#temporizador = #timer para aguardar nova operacao
 #====================="""
 
 with open('config.txt','r') as cf:
