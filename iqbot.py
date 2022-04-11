@@ -11,7 +11,7 @@ class BotIqoption(IQ_Option):
         super().__init__(email, password)
         self.OPERACAO = 1 if dados_export['OPERACAO'] == '1' else 2  # 1 - Digital\n  2 - Binaria
         self.PAR = dados_export['PAR'].upper()
-        self.TENTATIVAS = int(dados_export['TENTATIVAS'])
+        self.tentativas = int(dados_export['TENTATIVAS'])-1
         self.MULTIPLICADOR = float(dados_export['multiplicador'])  # valor da multiplicacao
         self.VALOR_ENTRADA = float(dados_export['valor_entrada'])  # valor entrada
         self.valor_operacao = float(dados_export['valor_entrada']) #valor operacao
@@ -72,27 +72,27 @@ class BotIqoption(IQ_Option):
             input('\n\n Aperte enter para sair')
             sys.exit()
 
-
+    #analiza o ultimo candle antes da entrada para definir a direcao
     def analiza_vela(self):
         vela = self.get_candles(self.PAR, 60, 1, time.time())
         if vela[0]['open'] < vela[0]['close']:
             return 'call'
         elif vela[0]['open'] > vela[0]['close']:
-            return 'putt'
+            return 'put'
         else:
             return False
 
     def operacao(self):
-        self.inicio = datetime.today().strftime("%H:%M") #definindo variavel global para usar como registro do relatorio
         while True:
             minutos = float(((datetime.now()).strftime('%S')))
             entrar = True if minutos >= 58 and minutos <= 59 else False
             print('Hora de entrar?', entrar, '/ Minutos:', minutos)
             if entrar:
-                self.inicio = datetime.today().strftime("%H:%M")
-                self.dir = self.analiza_vela()
+                self.inicio = datetime.today().strftime("%H:%M") #definindo variavel para usar como registro do relatorio
+                self.dir = self.analiza_vela() #define direção da operação [call, put ou False para doji]
                 while self.dir:
                     print('\n\nIniciando operação!', self.dir)
+                    #realiza compra da operação de acordo com o tipo da operacao (binaria ou digital)
                     status, id = self.buy_digital_spot(self.PAR, self.valor_operacao, self.dir, 1) if self.OPERACAO == 1 else self.buy(
                         self.valor_operacao, self.PAR, self.dir, 1)
                     if status:
@@ -111,7 +111,11 @@ class BotIqoption(IQ_Option):
                                 if valor < 0:
                                     self.win_cons = 0
                                     self.loss_cons += 1
-                                    self.dir = self.muda_dir(self.dir)
+                                    if self.tentativas == 0:
+                                        self.dir = self.muda_dir(self.dir)
+                                        self.tentativas = int(dados_export['TENTATIVAS'])-1
+                                    else:
+                                        self.tentativas -= 1
                                     self.valor_operacao *= self.MULTIPLICADOR
                                     self.stop_loss += round(valor, 2)
                                     self.loss += 1
@@ -119,7 +123,6 @@ class BotIqoption(IQ_Option):
 
                                 else:
                                     self.valor_operacao = self.VALOR_ENTRADA
-                                    self.dir = self.dir
                                     self.win_cons += 1
                                     self.loss_cons = 0
                                     self.win += 1
