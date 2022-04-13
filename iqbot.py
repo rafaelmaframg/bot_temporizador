@@ -17,6 +17,7 @@ class BotIqoption(IQ_Option):
         self.valor_operacao = float(dados_export['valor_entrada']) #valor operacao
         self.stop_loss = float(dados_export['stop_loss']) #limite de stop
         self.STOP_GAIN = float(dados_export['stop_gain']) #limite de win
+        self.TEMPORIZADOR = int(dados_export['temporizador'])*60 #recebe valor de tempo para aguardar a proxima operacao em minutos
         self.win = 0 #quantidade de operacoes vencedoras
         self.loss = 0 #quantidade de operacoes perdedoras
         self.lucro = 0 #lucro real
@@ -114,6 +115,10 @@ class BotIqoption(IQ_Option):
                                     if self.tentativas == 0:
                                         self.dir = self.muda_dir(self.dir)
                                         self.tentativas = int(dados_export['TENTATIVAS'])-1
+                                        if self.TEMPORIZADOR > 0:
+                                            time.sleep(self.TEMPORIZADOR)
+                                            self.dir = False
+                                            print(f'aguardando {self.TEMPORIZADOR/60} MINUTOS')
                                     else:
                                         self.tentativas -= 1
                                     self.valor_operacao *= self.MULTIPLICADOR
