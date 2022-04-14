@@ -13,6 +13,7 @@ legenda = """
 #stop_loss = #valor stop loss
 #stop_gain = #valor stop gain
 #temporizador = #timer para aguardar nova operacao
+#timeframe = #1/5/15 Timeframe para operações
 #====================="""
 
 with open('config.txt','r') as cf:
