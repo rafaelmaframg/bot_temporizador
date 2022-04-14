@@ -32,6 +32,7 @@ class BotIqoption(IQ_Option):
             print('\n\nDados Carregados com Sucesso!!\n')
         except:
             print('Erro ao importar os DADOS! certifique de que os dados inseridos estão corretos!')
+            input('\n\n Aperte enter para sair')
             sys.exit()
         self.conectar()
 
@@ -165,6 +166,7 @@ class BotIqoption(IQ_Option):
         print('Maior seq. Loss: ',self.maior_loss)
         print('Maior seq.Win: ',self.maior_win)
         wb.save("relatorio.xlsx")
+        input('\n\n Aperte enter para sair')
         sys.exit()
 
 bot = BotIqoption(dados_export['user'], dados_export['password'])
