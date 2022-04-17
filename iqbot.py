@@ -12,8 +12,7 @@ class BotIqoption(IQ_Option):
         try:
             self.OPERACAO = 1 if dados_export['OPERACAO'] == '1' else 2  # 1 - Digital\n  2 - Binaria
             self.PAR = dados_export['PAR'].upper()
-            self.tentativas = int(dados_export['TENTATIVAS'])-1  #numero de tentativas, subtraido um pois a operação
-            # em si já é uma tentativa
+            self.tentativas = int(dados_export['TENTATIVAS'])  #numero de tentativas
             self.MULTIPLICADOR = float(dados_export['multiplicador'])  # valor da multiplicacao
             self.VALOR_ENTRADA = float(dados_export['valor_entrada'])  # valor entrada
             self.valor_operacao = float(dados_export['valor_entrada']) #valor operacao
@@ -34,12 +33,28 @@ class BotIqoption(IQ_Option):
             print('Erro ao importar os DADOS! certifique de que os dados inseridos estão corretos!')
             input('\n\n Aperte enter para sair')
             sys.exit()
-        self.conectar()
+        finally:
+            # realiza conexão com a plataforma
+            self.connect()
+            print(f'Você esta operando em conta: {dados_export["TIPO_CONTA"]}\n')
 
-    #função para inverter a direção da operação
+            #define o tipo de operação DEMO/REAL
+            if dados_export['TIPO_CONTA'].upper() == "REAL":
+                self.change_balance('REAL')
+            else:
+                self.change_balance('PRACTICE')
+
+            if self.check_connect():
+                print(' Conectado com sucesso!\n\n')
+                self.operacao()
+            else:
+                print(' Erro ao conectar')
+                input('\n\n Aperte enter para sair')
+                sys.exit()
+
+    #função para inverter a direção da operação sempre que acionada
     def muda_dir(self, dir):
         return 'call' if dir == 'put' else 'put'
-
 
     #realiza verificacao se os stops definidos foram atingidos
     def stop(self, lucro, gain):
@@ -53,19 +68,6 @@ class BotIqoption(IQ_Option):
             print('loss:', self.loss, 'ganhou:', self.win)
             self.encerramento('win')
 
-    #realiza conexão com a plataforma
-    def conectar(self):
-        self.connect()
-        print(f'Você esta operando em conta: {dados_export["TIPO_CONTA"]}\n')
-        self.change_balance("REAL" if dados_export['TIPO_CONTA'].upper() == "REAL" else "PRACTICE")  # PRACTICE / REAL
-        if self.check_connect():
-            print(' Conectado com sucesso!\n\n')
-            self.operacao()
-        else:
-            print(' Erro ao conectar')
-            input('\n\n Aperte enter para sair')
-            sys.exit()
-
     #analiza o ultimo candle antes da entrada para definir a direcao
     def analiza_vela(self):
         vela = self.get_candles(self.PAR, 60, 1, time.time())
@@ -77,10 +79,14 @@ class BotIqoption(IQ_Option):
             print('DOJI')
             return False
 
+    #função criada para indicar o tempo correto para entrada na vela de acordo com o timeframe especificado na
+    # configuração as condicioais variam de 1 5 e 15 para que sejam captados os segundos finais davela para entrada
     def check_entrar(self, timeframe):
+
         if timeframe == 1:
             self.minutos = float(((datetime.now()).strftime('%S')))
-            return True if self.minutos >= 58 and self.minutos <= 59 else False
+            return True if self.minutos >= 58 else False
+
         elif timeframe == 5:
             self.minutos = float(((datetime.now()).strftime('%M.%S')[1:]))
             return True if (self.minutos >= 4.58 and self.minutos <= 4.59 or
@@ -91,6 +97,7 @@ class BotIqoption(IQ_Option):
                             self.minutos >= 29.58 and self.minutos <= 29.59
                             or self.minutos >= 59.58 and self.minutos <= 59.59) else False
 
+    #realiza a operaçã de entrada checkando o tempo correto para entrar e verificando a vela anterior como analize
     def operacao(self):
         while True:
             entrar = self.check_entrar(self.TIMEFRAME)
@@ -103,26 +110,37 @@ class BotIqoption(IQ_Option):
                     #realiza compra da operação de acordo com o tipo da operacao (binaria ou digital)
                     status, id = self.buy_digital_spot(self.PAR, self.valor_operacao, self.dir, self.TIMEFRAME) \
                         if self.OPERACAO == 1 else self.buy(self.valor_operacao, self.PAR, self.dir, self.TIMEFRAME)
+
+                   #realiza verificação se a compra foi feita com sucesso = TRUE, então inicia o processo para
                     if status:
                         while True:
+                            #loop para verificação do resultado, a forma de checkar o win varia de acordo com a operação
                             try:
-                                status, valor = self.check_win_digital_v2(id) \
-                                    if self.OPERACAO == 1 else self.check_win_v3(id)
+                                #verifica o win caso seja operação digital
+                                if self.OPERACAO == 1:
+                                    status, valor = self.check_win_digital_v2(id)
+                                else:
+                                    #realiza verificação caso operação seja binaria
+                                    valor = self.check_win_v3(id)
 
                             except:
                                 status = True
                                 valor = 0
                             if status:
+                                #valor recebe a variavel retornada da verificação apenas se a foi win
+                                #caso contrario recebe o valor da operação (entrada)
                                 valor = valor if valor > 0 else float('-' + str(abs(self.valor_operacao)))
                                 self.lucro += round(valor, 2)
                                 print('Resultado operação: ', end='')
-                                print('WIN /' if valor > 0 else 'LOSS /', round(valor, 2), '/', round(self.lucro, 2))
+                                print('WIN ||' if valor > 0 else 'LOSS ||', f'{round(valor, 2)} || {round(self.lucro, 2)}')
+
+                                #caso resultado seja loss realiza estrategia definida mudando o dir
                                 if valor < 0:
                                     self.win_cons = 0
                                     self.loss_cons += 1
                                     if self.tentativas == 0:
                                         self.dir = self.muda_dir(self.dir)
-                                        self.tentativas = int(dados_export['TENTATIVAS'])-1
+                                        self.tentativas = int(dados_export['TENTATIVAS'])
                                         if self.TEMPORIZADOR > 0:
                                             time.sleep(self.TEMPORIZADOR)
                                             self.dir = False
