@@ -138,19 +138,21 @@ class BotIqoption(IQ_Option):
                                 if valor < 0:
                                     self.win_cons = 0
                                     self.loss_cons += 1
+                                    self.loss += 1
+                                    print('Win: ', self.win, 'Loss: ', self.loss)
                                     if self.tentativas == 0:
                                         self.dir = self.muda_dir(self.dir)
                                         self.tentativas = int(dados_export['TENTATIVAS'])
                                         if self.TEMPORIZADOR > 0:
+                                            print(f'Aguardando {self.TEMPORIZADOR / 60} MINUTOS')
                                             time.sleep(self.TEMPORIZADOR)
                                             self.dir = False
-                                            print(f'aguardando {self.TEMPORIZADOR/60} MINUTOS')
+
                                     else:
                                         self.tentativas -= 1
                                     self.valor_operacao *= self.MULTIPLICADOR
                                     self.stop_loss += round(valor, 2)
-                                    self.loss += 1
-                                    print('Win: ', self.win, 'Loss: ', self.loss)
+
 
                                 else:
                                     self.valor_operacao = self.VALOR_ENTRADA
