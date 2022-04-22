@@ -37,6 +37,7 @@ class BotIqoption(IQ_Option):
             # realiza conexão com a plataforma
             self.connect()
             print(f'Você esta operando em conta: {dados_export["TIPO_CONTA"]}\n')
+            print('Valor atual da sua banca: R$', self.get_balance()) #issue #4 by: KairosGG
 
             #define o tipo de operação DEMO/REAL
             if dados_export['TIPO_CONTA'].upper() == "REAL":
@@ -61,11 +62,13 @@ class BotIqoption(IQ_Option):
         if self.stop_loss <= 0:
             print('Stop Loss batido!')
             print('loss:', self.loss, 'ganhou:', self.win)
+            print('Valor atual da sua banca: R$', self.get_balance()) #issue #4 by: KairosGG
             self.encerramento('loss')
 
         if lucro >= float(abs(gain)):
             print('Stop Gain Batido!')
             print('loss:', self.loss, 'ganhou:', self.win)
+            print('Valor atual da sua banca: R$', self.get_balance()) #issue #4 by: KairosGG
             self.encerramento('win')
 
     #analiza o ultimo candle antes da entrada para definir a direcao
